@@ -38,6 +38,4 @@ class DiariesLoader {
     fun removeDiary(diary: Diary) {
         diariesList.remove(diary)
     }
-
-    fun getDiary(id: Int): Diary? = diariesList.find { it.id == id }
 }

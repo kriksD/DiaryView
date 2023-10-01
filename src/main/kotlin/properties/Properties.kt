@@ -1,9 +1,7 @@
 package properties
 
-import androidx.compose.ui.graphics.ImageBitmap
 import properties.settings.Settings
 import properties.settings.SettingsContainer
-import java.io.File
 
 object Properties {
     const val version = "0.0.0 alpha"

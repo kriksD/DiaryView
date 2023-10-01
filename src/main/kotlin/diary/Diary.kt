@@ -42,6 +42,4 @@ class Diary(
     }
 
     val entries: List<DiaryEntry> get() = diaryEntries
-
-    fun getEntry(id: Int): DiaryEntry? = diaryEntries.find { it.id == id }
 }
