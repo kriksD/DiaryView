@@ -12,33 +12,57 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import diary.Diary
 import diary.DiaryEntry
+import status.StatusEntry
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun MainScreen(
     diaries: List<Diary>,
+    statuses: List<StatusEntry>,
     onSelectDiary: (Diary) -> Unit = {},
     onSelectEntry: (Diary, DiaryEntry) -> Unit = { _, _ -> },
     onCreateDiaryOpen: () -> Unit = {},
+    onEditStatusOpen: (StatusEntry) -> Unit = {},
+    onCreateStatusOpen: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val checkValues = remember { CheckManager(Pair("diaries", true), Pair("all entries", false)) }
+    val checkValues = remember { CheckManager(
+        CheckValue("diaries", true),
+        CheckValue("all entries", false),
+        CheckValue("statuses", false)
+    ) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier,
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(0.8F)
         ) {
-            ButtonWithIcon(
-                icon = Icons.Default.Add,
-                onClick = onCreateDiaryOpen,
-                modifier = Modifier.size(iconSize)
-            )
+            AppearDisappearAnimation(
+                checkValues.getChecked() == "diaries" || checkValues.getChecked() == "statuses",
+                modifier = Modifier.size(iconSize),
+            ) {
+                ButtonWithIcon(
+                    icon = Icons.Default.Add,
+                    onClick = {
+                        when (checkValues.getChecked()) {
+                            "diaries" -> onCreateDiaryOpen()
+                            "statuses" -> onCreateStatusOpen()
+                            else -> onCreateDiaryOpen()
+                        }
+                    },
+                    modifier = Modifier.size(iconSize)
+                )
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(padding, Alignment.CenterHorizontally),
@@ -51,9 +75,7 @@ fun MainScreen(
                 checkValues.getKeys().forEach {
                     CheckButton(
                         text = it,
-                        onClick = {
-                            checkValues.check(it)
-                        },
+                        onClick = { checkValues.check(it) },
                         checked = checkValues.get(it) == true,
                     )
                 }
@@ -72,6 +94,11 @@ fun MainScreen(
                     val diary = diaries.find { it.entries.contains(entry) }
                     diary?.let { onSelectEntry(it, entry) }
                 },
+                modifier = Modifier.fillMaxWidth(0.8F),
+            )
+            "statuses" -> StatusesList(
+                statuses,
+                onEditStatusOpen = onEditStatusOpen,
                 modifier = Modifier.fillMaxWidth(0.8F),
             )
             else -> {}
@@ -153,6 +180,77 @@ private fun DiaryCard(
 
         Text(
             text = diary.description,
+            color = colorText,
+            style = TextStyle(fontSize = normalText),
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(padding),
+        )
+    }
+}
+
+@Composable
+private fun StatusesList(
+    statuses: List<StatusEntry>,
+    onEditStatusOpen: (StatusEntry) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(padding, Alignment.CenterVertically),
+        modifier = modifier.verticalScroll(rememberScrollState()),
+    ) {
+        statuses.sortedByDescending { it.dateCreate }.forEach { status ->
+            StatusCard(status, onEditStatusOpen)
+        }
+    }
+}
+
+@Composable
+private fun StatusCard(
+    status: StatusEntry,
+    onEditStatusOpen: (StatusEntry) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .background(colorBackground, RoundedCornerShape(corners))
+            .padding(padding)
+            .fillMaxWidth()
+            .clickable { onEditStatusOpen(status) },
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(padding),
+        ) {
+            val dateCreate = LocalDateTime.ofInstant(Instant.ofEpochMilli(status.dateCreate), ZoneId.systemDefault())
+            val dateEdit = LocalDateTime.ofInstant(Instant.ofEpochMilli(status.dateEdit), ZoneId.systemDefault())
+
+            val formatter = DateTimeFormatter.ofPattern("hh:mm a dd/MM/yyyy")
+            val formattedDateCreate = formatter.format(dateCreate)
+            val formattedDateEdit = formatter.format(dateEdit)
+
+            Text(
+                text = formattedDateCreate,
+                color = colorText,
+                style = TextStyle(fontSize = bigText, fontWeight = FontWeight.Bold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(padding),
+            )
+
+            if (status.dateCreate != status.dateEdit) {
+                Text(
+                    text = "(edited: $formattedDateEdit)",
+                    color = colorText,
+                    style = TextStyle(fontSize = normalText, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(padding),
+                )
+            }
+        }
+
+        Text(
+            text = status.content,
             color = colorText,
             style = TextStyle(fontSize = normalText),
             maxLines = 3,

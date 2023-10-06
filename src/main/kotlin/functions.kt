@@ -1,5 +1,8 @@
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.graphics.*
 import diary.DiaryEntry
 import org.jetbrains.skia.*
@@ -171,7 +174,7 @@ fun uniqueName(name: String, list: List<String>): String {
     return "$name${if (i > 0) i else ""}"
 }
 
-fun List<DiaryEntry>.uniqueId(): Int {
+fun <T : HasId> List<T>.uniqueId(): Int {
     val biggestId = this.maxOfOrNull { it.id } ?: return 0
     return biggestId + 1
 }

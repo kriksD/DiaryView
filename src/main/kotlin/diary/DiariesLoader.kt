@@ -1,8 +1,10 @@
+package diary
+
 import androidx.compose.runtime.mutableStateListOf
-import diary.Diary
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import uniqueId
 import java.io.File
 
 class DiariesLoader {
@@ -25,13 +27,13 @@ class DiariesLoader {
     fun save() {
         folder.mkdirs()
         diariesList.forEach { diary ->
-            val file = File(folder, "${diary.title}_id${diary.id}.json")
+            val file = File(folder, "diary_id${diary.id}.json")
             file.writeText(Json.encodeToString(diary))
         }
     }
 
     fun addDiary(title: String, description: String) {
-        val diary = Diary(diariesList.maxOfOrNull { it.id }?.plus(1) ?: 0, title, description)
+        val diary = Diary(diariesList.uniqueId(), title, description)
         diariesList.add(diary)
     }
 

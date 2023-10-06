@@ -1,14 +1,15 @@
 package diary
 
+import HasId
 import kotlinx.serialization.Serializable
 import uniqueId
 
 @Serializable(DiarySerializer::class)
 class Diary(
-    val id: Int,
+    override val id: Int,
     var title: String,
     var description: String,
-) {
+) : HasId {
     private val diaryEntries = mutableListOf<DiaryEntry>()
 
     fun createEntry(title: String): DiaryEntry {

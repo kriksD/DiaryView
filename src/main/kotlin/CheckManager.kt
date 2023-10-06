@@ -1,16 +1,25 @@
+import androidx.compose.runtime.toMutableStateList
+
 class CheckManager<K>(
-    vararg pairs: Pair<K, Boolean>
+    vararg values: CheckValue<K>
 ) {
-    private val values = pairs.toMap().toState()
+    private val values = values.toList().toMutableStateList()
 
-    fun getKeys(): List<K> = values.keys.toList()
+    fun getKeys(): List<K> = values.map { it.key }
 
-    fun get(key: K): Boolean? = values[key]
+    fun get(key: K): Boolean? = values.find { it.key == key }?.checked
 
-    fun getChecked(): K? = values.keys.find { values[it] == true }
+    fun getChecked(): K? = values.find { it.checked }?.key
 
     fun check(key: K) {
-        values.forEach { (key, _) -> values[key] = false }
-        values[key] = true
+        repeat(values.size) { i ->
+            val value = values[i]
+            values[i] = value.copy(checked = value.key == key)
+        }
     }
 }
+
+data class CheckValue<K>(
+    val key: K,
+    val checked: Boolean,
+)

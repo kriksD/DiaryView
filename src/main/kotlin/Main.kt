@@ -10,9 +10,12 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import diary.DiariesLoader
 import diary.Diary
 import diary.DiaryEntry
 import properties.Properties
+import status.StatusEntry
+import status.StatusesLoader
 
 fun main() = application {
     Properties.loadSettings()
@@ -21,15 +24,21 @@ fun main() = application {
     val diaries by remember { mutableStateOf(DiariesLoader()) }
     diaries.load()
 
+    val statuses by remember { mutableStateOf(StatusesLoader()) }
+    statuses.load()
+
     val screen by remember { mutableStateOf(CheckManager(
-        Pair(Screen.Main, true),
-        Pair(Screen.Diary, false),
-        Pair(Screen.Entry, false),
+        CheckValue(Screen.Main, true),
+        CheckValue(Screen.Diary, false),
+        CheckValue(Screen.Entry, false),
     )) }
     var selectedDiary by remember { mutableStateOf<Diary?>(null) }
     var selectedEntry by remember { mutableStateOf<DiaryEntry?>(null) }
 
+    var selectedStatus by remember { mutableStateOf<StatusEntry?>(null) }
+
     var isCreateDiaryWindowOpen by remember { mutableStateOf(false) }
+    var isEditStatusWindowOpen by remember { mutableStateOf(false) }
 
     val windowState = rememberWindowState(
         width = 1400.dp,
@@ -52,7 +61,8 @@ fun main() = application {
         ) {
             when(screen.getChecked()) {
                 Screen.Main -> MainScreen(
-                    diaries.diaries,
+                    diaries = diaries.diaries,
+                    statuses = statuses.statuses,
                     onSelectDiary = {
                         selectedDiary = it
                         selectedEntry = null
@@ -66,7 +76,14 @@ fun main() = application {
                     onCreateDiaryOpen = {
                         isCreateDiaryWindowOpen = true
                     },
-                    modifier = Modifier.fillMaxSize()
+                    onEditStatusOpen = { status ->
+                        selectedStatus = status
+                        isEditStatusWindowOpen = true
+                    },
+                    onCreateStatusOpen = {
+                        isEditStatusWindowOpen = true
+                    },
+                    modifier = Modifier.fillMaxSize(),
                 )
                 Screen.Diary -> EntriesList(
                     selectedDiary?.entries ?: return@Window,
@@ -111,6 +128,34 @@ fun main() = application {
                         diaries.save()
                     },
                     onCancel = { isCreateDiaryWindowOpen = false },
+                    modifier = Modifier
+                        .fillMaxWidth(0.65F)
+                        .heightIn(0.dp, (window.height * 0.8F).dp)
+                        .background(colorBackground.copy(transparencySecond), RoundedCornerShape(corners))
+                        .border(smallBorder, colorBorder, RoundedCornerShape(corners))
+                        .padding(padding),
+                )
+            }
+
+            AppearDisappearAnimation(
+                isEditStatusWindowOpen,
+                normalAnimationDuration,
+                Modifier.align(Alignment.Center),
+            ) {
+                EditStatusWindow(
+                    previousContent = selectedStatus?.content ?: "",
+                    onDone = { content ->
+                        selectedStatus?.content = content
+                        if (selectedStatus == null) statuses.addStatus(content)
+
+                        selectedStatus = null
+                        isEditStatusWindowOpen = false
+                        statuses.save()
+                    },
+                    onCancel = {
+                        selectedStatus = null
+                        isEditStatusWindowOpen = false
+                    },
                     modifier = Modifier
                         .fillMaxWidth(0.65F)
                         .heightIn(0.dp, (window.height * 0.8F).dp)
